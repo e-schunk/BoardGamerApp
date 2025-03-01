@@ -1,0 +1,19 @@
+# Build-Ordner (wird von Gradle generiert)
+build/
+.gradle/
+.idea/
+captures/
+
+# Lokale Konfigurationsdateien
+local.properties
+*.iml
+
+# Benutzerabhängige Dateien (Android Studio & Betriebssystem)
+*.log
+*.DS_Store
+*.swp
+*.swo
+
+# Firebase & API-Schlüssel (niemals hochladen!)
+app/google-services.json
+app/src/google-services.json
