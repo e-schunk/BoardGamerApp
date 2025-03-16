@@ -39,9 +39,6 @@ fun AppNavigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel, d
         composable("home"){
             MainPage(modifier, navController, authViewModel)
         }
-        composable("dashboard"){
-            DashboardPage(modifier, navController, authViewModel, dataViewModel)
-        }
         //Event
         composable("eventList"){
             EventListPage(modifier, navController, authViewModel, dataViewModel)
@@ -52,6 +49,9 @@ fun AppNavigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel, d
         composable("eventDetail/{eventId}") { backStackEntry ->
             val eventId = backStackEntry.arguments?.getString("eventId")
             EventDetailPage(modifier, navController, authViewModel, dataViewModel, eventId)
+        }
+        composable("dashboard"){
+            DashboardPage(modifier, navController, authViewModel, dataViewModel)
         }
         //Game
         composable("gameList/{eventId}"){ backStackEntry ->
