@@ -19,5 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "BoardGame"
+rootProject.name = "BoardPlay"
 include(":app")

@@ -6,11 +6,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.boardgame"
+    namespace = "de.eduardschunk.boardplay"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.boardgame"
+        applicationId = "de.eduardschunk.boardplay"
         minSdk = 24
         targetSdk = 35
         versionCode = 1
