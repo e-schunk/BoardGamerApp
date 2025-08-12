@@ -52,11 +52,7 @@ import java.time.format.DateTimeFormatter
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun EventDetailPage(
-    modifier: Modifier = Modifier,
-    navController: NavController,
-    authViewModel: AuthViewModel,
-    dataViewModel: DataViewModel,
-    eventId: String?
+    modifier: Modifier = Modifier, navController: NavController, authViewModel: AuthViewModel, dataViewModel: DataViewModel, eventId: String?
 ) {
     val authState = authViewModel.authState.observeAsState()
     var event by remember { mutableStateOf<Event?>(null) }
@@ -66,72 +62,51 @@ fun EventDetailPage(
             is AuthState.Unauthenticated -> navController.navigate("home")
             else -> Unit
         }
+    }
 
+    LaunchedEffect(eventId) {
         dataViewModel.fetchEventById(eventId) { loadedEvent ->
             event = loadedEvent
         }
     }
 
-    Scaffold(
-        topBar = {
-            AppTopBar(
-                titel = "Event Details",
-                onMenuClick = { navController.navigate("home") },
-                dataViewModel = dataViewModel
-            )
-        },
-        bottomBar = {
-            TextButton(
-                onClick = { authViewModel.singout() }
-            ) {
-                Text(text = "Ausloggen")
-            }
+    Scaffold(topBar = {
+        AppTopBar(
+            titel = "Event Details", onMenuClick = { navController.navigate("home") }, dataViewModel = dataViewModel
+        )
+    }, bottomBar = {
+        TextButton(
+            onClick = { authViewModel.singout() }) {
+            Text(text = "Ausloggen")
         }
-    ) { innerPadding ->
+    }) { innerPadding ->
         Column(
             modifier = modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .background(colorResource(R.color.white)),
-            horizontalAlignment = Alignment.Start
+                .background(colorResource(R.color.white)), horizontalAlignment = Alignment.Start
         ) {
             Text(
-                text = event?.title ?: "Titel fehlt",
-                style = TextStyle(
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = colorResource(R.color.black),
-                    fontFamily = RobotoFontFamily
-                ),
-                modifier = Modifier
+                text = event?.title ?: "Titel fehlt", style = TextStyle(
+                    fontSize = 28.sp, fontWeight = FontWeight.Bold, color = colorResource(R.color.black), fontFamily = RobotoFontFamily
+                ), modifier = Modifier
                     .padding(horizontal = 20.dp)
                     .height(39.dp)
             )
             Spacer(modifier = Modifier.height(10.dp))
             Text(
-                text = "Am " + event?.date,
-                style = TextStyle(
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Normal,
-                    color = colorResource(R.color.dark_blue),
-                    fontFamily = RobotoFontFamily
-                ),
-                modifier = Modifier
+                text = "Am " + event?.date, style = TextStyle(
+                    fontSize = 14.sp, fontWeight = FontWeight.Normal, color = colorResource(R.color.dark_blue), fontFamily = RobotoFontFamily
+                ), modifier = Modifier
                     .padding(horizontal = 20.dp)
                     .height(18.dp)
             )
             Spacer(modifier = Modifier.height(10.dp))
             event?.description?.let {
                 Text(
-                    text = it,
-                    style = TextStyle(
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Normal,
-                        color = colorResource(R.color.black),
-                        fontFamily = RobotoFontFamily
-                    ),
-                    modifier = Modifier
-                        .padding(horizontal = 20.dp)
+                    text = it, style = TextStyle(
+                        fontSize = 16.sp, fontWeight = FontWeight.Normal, color = colorResource(R.color.black), fontFamily = RobotoFontFamily
+                    ), modifier = Modifier.padding(horizontal = 20.dp)
                 )
             }
             Row(
@@ -140,14 +115,12 @@ fun EventDetailPage(
                     .fillMaxWidth()
                     .padding(horizontal = 50.dp)
                     .padding(top = 80.dp, bottom = 20.dp)
-            )
-            {
+            ) {
                 Column {
                     LargeFloatingActionButton(
                         onClick = {
                             navController.navigate("gamerList/$eventId")
-                        },
-                        containerColor = colorResource(R.color.dark_blue)
+                        }, containerColor = colorResource(R.color.dark_blue)
                     ) {
                         Icon(
                             imageVector = Icons.Filled.Groups,
@@ -157,14 +130,9 @@ fun EventDetailPage(
                         )
                     }
                     Text(
-                        text = "Spieler",
-                        style = TextStyle(
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Normal,
-                            fontFamily = RobotoFontFamily,
-                            color = colorResource(R.color.black)
-                        ),
-                        modifier = Modifier
+                        text = "Spieler", style = TextStyle(
+                            fontSize = 14.sp, fontWeight = FontWeight.Normal, fontFamily = RobotoFontFamily, color = colorResource(R.color.black)
+                        ), modifier = Modifier
                             .padding(top = 10.dp)
                             .align(Alignment.CenterHorizontally)
                     )
@@ -174,8 +142,7 @@ fun EventDetailPage(
                     LargeFloatingActionButton(
                         onClick = {
                             navController.navigate("gameList/$eventId")
-                        },
-                        containerColor = colorResource(R.color.dark_blue)
+                        }, containerColor = colorResource(R.color.dark_blue)
                     ) {
                         Icon(
                             imageVector = Icons.Filled.Mood,
@@ -185,33 +152,25 @@ fun EventDetailPage(
                         )
                     }
                     Text(
-                        text = "Spiele",
-                        style = TextStyle(
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Normal,
-                            fontFamily = RobotoFontFamily,
-                            color = colorResource(R.color.black)
-                        ),
-                        modifier = Modifier
+                        text = "Spiele", style = TextStyle(
+                            fontSize = 14.sp, fontWeight = FontWeight.Normal, fontFamily = RobotoFontFamily, color = colorResource(R.color.black)
+                        ), modifier = Modifier
                             .padding(top = 10.dp)
                             .align(Alignment.CenterHorizontally)
                     )
                 }
             }
             Row(
-                horizontalArrangement = Arrangement.SpaceAround,
-                modifier = Modifier
+                horizontalArrangement = Arrangement.SpaceAround, modifier = Modifier
                     .fillMaxWidth()
                     .padding(all = 50.dp)
-            )
-            {
+            ) {
 
                 Column {
                     LargeFloatingActionButton(
                         onClick = {
                             navController.navigate("chat/$eventId/${Firebase.auth.currentUser?.uid}")
-                        },
-                        containerColor = colorResource(R.color.dark_blue)
+                        }, containerColor = colorResource(R.color.dark_blue)
                     ) {
                         Icon(
                             imageVector = Icons.Filled.ChatBubble,
@@ -221,14 +180,9 @@ fun EventDetailPage(
                         )
                     }
                     Text(
-                        text = "Chat",
-                        style = TextStyle(
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Normal,
-                            fontFamily = RobotoFontFamily,
-                            color = colorResource(R.color.black)
-                        ),
-                        modifier = Modifier
+                        text = "Chat", style = TextStyle(
+                            fontSize = 14.sp, fontWeight = FontWeight.Normal, fontFamily = RobotoFontFamily, color = colorResource(R.color.black)
+                        ), modifier = Modifier
                             .padding(top = 10.dp)
                             .align(Alignment.CenterHorizontally)
                     )
@@ -243,8 +197,7 @@ fun EventDetailPage(
                                 } else {
                                     navController.navigate("rating/$eventId/${Firebase.auth.currentUser?.uid}")
                                 }
-                            },
-                            containerColor = colorResource(R.color.dark_blue)
+                            }, containerColor = colorResource(R.color.dark_blue)
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.Star,
@@ -258,14 +211,9 @@ fun EventDetailPage(
                                 "Bewertungen"
                             } else {
                                 "Bewerten"
-                            },
-                            style = TextStyle(
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Normal,
-                                fontFamily = RobotoFontFamily,
-                                color = colorResource(R.color.black)
-                            ),
-                            modifier = Modifier
+                            }, style = TextStyle(
+                                fontSize = 14.sp, fontWeight = FontWeight.Normal, fontFamily = RobotoFontFamily, color = colorResource(R.color.black)
+                            ), modifier = Modifier
                                 .padding(top = 10.dp)
                                 .align(Alignment.CenterHorizontally)
                         )

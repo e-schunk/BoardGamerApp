@@ -1,6 +1,8 @@
 package de.eduardschunk.boardplay.pages.suggestions
 
+import android.os.Build
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -50,14 +52,11 @@ import de.eduardschunk.boardplay.data.User
 import de.eduardschunk.boardplay.ui.theme.RobotoFontFamily
 
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ParticipantSuggestPage(
-    modifier: Modifier = Modifier,
-    navController: NavController,
-    authViewModel: AuthViewModel,
-    dataViewModel: DataViewModel,
-    suggestionDateId: String?
+    modifier: Modifier = Modifier, navController: NavController, authViewModel: AuthViewModel, dataViewModel: DataViewModel, suggestionDateId: String?
 ) {
 
     val authState = authViewModel.authState.observeAsState()
@@ -73,36 +72,27 @@ fun ParticipantSuggestPage(
             is AuthState.Unauthenticated -> navController.navigate("home")
             else -> Unit
         }
-
-        suggestionDateId?.let {
-            dataViewModel.fetchSuggestionDateById(it) { loadedSuggestionDate ->
-                suggestionDate = loadedSuggestionDate
-            }
-        }
     }
 
-    Scaffold(
-        topBar = {
-            AppTopBar(
-                titel = "Umfrage",
-                onMenuClick = { navController.navigate("home") },
-                dataViewModel = dataViewModel
-            )
-        },
-        bottomBar = {
-            TextButton(
-                onClick = { authViewModel.singout() }
-            ) {
-                Text(text = "Ausloggen")
-            }
+    LaunchedEffect(suggestionDateId) {
+        suggestionDate = suggestionDateId?.let { dataViewModel.fetchSuggestionDateById(suggestionDateId) } ?: SuggestionDate()
+    }
+
+    Scaffold(topBar = {
+        AppTopBar(
+            titel = "Umfrage", onMenuClick = { navController.navigate("home") }, dataViewModel = dataViewModel
+        )
+    }, bottomBar = {
+        TextButton(
+            onClick = { authViewModel.singout() }) {
+            Text(text = "Ausloggen")
         }
-    ) { innerPadding ->
+    }) { innerPadding ->
         Column(
             modifier = modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .background(colorResource(R.color.white)),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .background(colorResource(R.color.white)), horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Row(
                 modifier = Modifier
@@ -114,12 +104,8 @@ fun ParticipantSuggestPage(
             ) {
                 Text(
                     "Person zur Umfrage einladen", style = TextStyle(
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = colorResource(R.color.black),
-                        fontFamily = RobotoFontFamily
-                    ),
-                    modifier = Modifier.height(39.dp)
+                        fontSize = 24.sp, fontWeight = FontWeight.Bold, color = colorResource(R.color.black), fontFamily = RobotoFontFamily
+                    ), modifier = Modifier.height(39.dp)
                 )
             }
             SearchBar(
@@ -145,8 +131,7 @@ fun ParticipantSuggestPage(
                     }) { Icon(Icons.Default.Close, "Löschen") }
                 },
                 colors = SearchBarDefaults.colors(
-                    containerColor = colorResource(R.color.bg_appbar_blue),
-                    dividerColor = colorResource(R.color.dark_blue)
+                    containerColor = colorResource(R.color.bg_appbar_blue), dividerColor = colorResource(R.color.dark_blue)
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -154,65 +139,45 @@ fun ParticipantSuggestPage(
             ) {
                 LazyColumn {
                     items(searchResult) { userItem ->
-                        ListItem(
-                            headlineContent = { Text(userItem.firstName + " " + userItem.lastName) },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    if (suggestionDateId != null) {
-                                        showDialog = true
-                                        selectedUser = userItem
-                                    }
+                        ListItem(headlineContent = { Text(userItem.firstName + " " + userItem.lastName) }, modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                if (suggestionDateId != null) {
+                                    showDialog = true
+                                    selectedUser = userItem
                                 }
-                        )
+                            })
                         HorizontalDivider(
-                            color = colorResource(R.color.green),
-                            thickness = 1.dp,
-                            modifier = Modifier
+                            color = colorResource(R.color.green), thickness = 1.dp, modifier = Modifier
                         )
                     }
                 }
                 if (showDialog && selectedUser != null && suggestionDateId != null) {
                     AlertDialog(
-                        onDismissRequest = { showDialog = false },
-                        title = { Text(text = "Teilnehmer hinzufügen") },
-                        text = {
-                            Text(text = "Willst du den Teilnehmer ${selectedUser!!.firstName} ${selectedUser!!.lastName} wirklich hinzufügen?")
-                        },
-                        confirmButton = {
-                            TextButton(
-                                onClick = {
-                                    dataViewModel.addPersonToSuggestionDate(
-                                        suggestionDateId = suggestionDateId,
-                                        userId = selectedUser!!.id,
-                                        onSuccess = {
-                                            Toast.makeText(
-                                                navController.context,
-                                                "Person hinzugefügt",
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                            navController.navigate("suggestionDateDetail/$suggestionDateId")
-                                        },
-                                        onFailure = {
-                                            Toast.makeText(
-                                                navController.context,
-                                                "Person konnte nicht hinzugefügt werden",
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                        }
-                                    )
-                                    showDialog = false
-                                }
-                            ) {
-                                Text("Hinzufügen")
-                            }
-                        },
-                        dismissButton = {
-                            TextButton(onClick = { showDialog = false }) {
-                                Text("Abbrechen")
-                            }
-                        },
-                        containerColor = colorResource(R.color.light_grey)
+                        onDismissRequest = { showDialog = false }, title = { Text(text = "Teilnehmer hinzufügen") }, text = {
+                        Text(text = "Willst du den Teilnehmer ${selectedUser!!.firstName} ${selectedUser!!.lastName} wirklich hinzufügen?")
+                    }, confirmButton = {
+                        TextButton(
+                            onClick = {
+                                dataViewModel.addPersonToSuggestionDate(suggestionDateId = suggestionDateId, userId = selectedUser!!.id, onSuccess = {
+                                    Toast.makeText(
+                                        navController.context, "Person hinzugefügt", Toast.LENGTH_SHORT
+                                    ).show()
+                                    navController.navigate("suggestionDateDetail/$suggestionDateId")
+                                }, onFailure = {
+                                    Toast.makeText(
+                                        navController.context, "Person konnte nicht hinzugefügt werden", Toast.LENGTH_SHORT
+                                    ).show()
+                                })
+                                showDialog = false
+                            }) {
+                            Text("Hinzufügen")
+                        }
+                    }, dismissButton = {
+                        TextButton(onClick = { showDialog = false }) {
+                            Text("Abbrechen")
+                        }
+                    }, containerColor = colorResource(R.color.light_grey)
                     )
                 }
             }

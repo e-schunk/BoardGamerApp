@@ -10,4 +10,6 @@
     <color name="black">#333333</color>
     <color name="dark_grey">#666666</color>
     <color name="bg_appbar_blue">#D9DDE9</color>
+    <color name="bg_yellow">#FBF9D3</color>
+    <color name="bg_green">#84B698</color>
 </resources>

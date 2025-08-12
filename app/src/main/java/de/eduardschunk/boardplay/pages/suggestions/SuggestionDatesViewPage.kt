@@ -41,21 +41,19 @@ import de.eduardschunk.boardplay.AuthViewModel
 import de.eduardschunk.boardplay.DataViewModel
 import de.eduardschunk.boardplay.R
 import de.eduardschunk.boardplay.components.AppTopBar
+import de.eduardschunk.boardplay.data.DateEntry
 import de.eduardschunk.boardplay.data.SuggestionDate
 import de.eduardschunk.boardplay.ui.theme.RobotoFontFamily
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun SuggestionDatesViewPage(
-    modifier: Modifier = Modifier,
-    navController: NavController,
-    authViewModel: AuthViewModel,
-    dataViewModel: DataViewModel,
-    suggestionDateId: String?
+    modifier: Modifier = Modifier, navController: NavController, authViewModel: AuthViewModel, dataViewModel: DataViewModel, suggestionDateId: String?
 ) {
     val authState = authViewModel.authState.observeAsState()
     var suggestionDate by remember { mutableStateOf(SuggestionDate()) }
-    val dateList by dataViewModel.dateListLiveData.observeAsState(emptyList())
+    var dateList by remember { mutableStateOf<List<DateEntry>>(emptyList()) }
+    val user = Firebase.auth.currentUser?.uid
 
     LaunchedEffect(authState.value) {
         when (authState.value) {
@@ -66,37 +64,26 @@ fun SuggestionDatesViewPage(
 
     LaunchedEffect(suggestionDateId) {
         suggestionDateId?.let {
-            dataViewModel.fetchSuggestionDateById(it) { loadedSuggestionDate ->
-                if (loadedSuggestionDate != null) {
-                    suggestionDate = loadedSuggestionDate
-                }
-            }
-            dataViewModel.observeDateList(it)
+            suggestionDate = dataViewModel.fetchSuggestionDateById(suggestionDateId) ?: SuggestionDate()
+            dateList = dataViewModel.fetchDateList(suggestionDateId)
         }
     }
 
-    Scaffold(
-        topBar = {
-            AppTopBar(
-                titel = "Terminvorschläge",
-                onMenuClick = { navController.navigate("home") },
-                dataViewModel = dataViewModel
-            )
-        },
-        bottomBar = {
-            TextButton(
-                onClick = { authViewModel.singout() }
-            ) {
-                Text(text = "Ausloggen")
-            }
+    Scaffold(topBar = {
+        AppTopBar(
+            titel = "Terminvorschläge", onMenuClick = { navController.navigate("home") }, dataViewModel = dataViewModel
+        )
+    }, bottomBar = {
+        TextButton(
+            onClick = { authViewModel.singout() }) {
+            Text(text = "Ausloggen")
         }
-    ) { innerPadding ->
+    }) { innerPadding ->
         Column(
             modifier = modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .background(colorResource(R.color.white)),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .background(colorResource(R.color.white)), horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Row(
                 modifier = Modifier
@@ -108,25 +95,16 @@ fun SuggestionDatesViewPage(
             ) {
                 Text(
                     "Terminvorschläge", style = TextStyle(
-                        fontSize = 28.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = colorResource(R.color.black),
-                        fontFamily = RobotoFontFamily
-                    ),
-                    modifier = Modifier.height(39.dp)
+                        fontSize = 28.sp, fontWeight = FontWeight.Bold, color = colorResource(R.color.black), fontFamily = RobotoFontFamily
+                    ), modifier = Modifier.height(39.dp)
                 )
             }
             if (dateList.isEmpty()) {
                 Spacer(modifier = Modifier.height(50.dp))
                 Text(
-                    text = "Keine Terminvorschläge",
-                    style = TextStyle(
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Normal,
-                        color = colorResource(R.color.dark_grey),
-                        fontFamily = RobotoFontFamily
-                    ),
-                    modifier = Modifier.height(28.dp)
+                    text = "Keine Terminvorschläge", style = TextStyle(
+                        fontSize = 18.sp, fontWeight = FontWeight.Normal, color = colorResource(R.color.dark_grey), fontFamily = RobotoFontFamily
+                    ), modifier = Modifier.height(28.dp)
                 )
             }
             Spacer(modifier = Modifier.height(20.dp))
@@ -135,37 +113,43 @@ fun SuggestionDatesViewPage(
             ) {
                 items(dateList) { entry ->
                     var isChecked by remember { mutableStateOf(false) }
-                    ListItem(
-                        headlineContent = { Text(entry.date) },
-                        leadingContent = {
-                            Checkbox(
-                                checked = isChecked,
-                                onCheckedChange = {
+                    if (entry.participants.contains(user)) {
+                        isChecked = true
+                    }
+                    ListItem(headlineContent = { Text(entry.date) }, leadingContent = {
+                        Checkbox(
+                            checked = isChecked, onCheckedChange = {
+                                if (suggestionDateId != null && user != null) {
                                     isChecked = !isChecked
                                     if (isChecked) {
-                                        dataViewModel.addDateAndUserToDatesOnSuggestionDate(suggestionDateId!!, entry, Firebase.auth.currentUser!!.uid)
-                                        dataViewModel.updateDateEntryCounter(entry.key, suggestionDateId, true)
+                                        dataViewModel.addUserToDateListBySuggestionDate(
+                                            suggestionDateId, entry, user
+                                        )
+                                        dataViewModel.updateDateEntryCounter(
+                                            entry.key, suggestionDateId, true
+                                        )
                                     } else {
-                                        dataViewModel.removeDateAndUserFromDatesOnSuggestionDate(suggestionDateId!!, entry.key)
-                                        dataViewModel.updateDateEntryCounter(entry.key, suggestionDateId, false)
+                                        dataViewModel.removeUserFromDateListBySuggestionDate(
+                                            suggestionDateId, entry.key, user
+                                        )
+                                        dataViewModel.updateDateEntryCounter(
+                                            entry.key, suggestionDateId, false
+                                        )
                                     }
-                                    dataViewModel.updateParticipantState(Firebase.auth.currentUser!!.uid, suggestionDateId, ParticipantState.HasVoted)
-                                },
-                                modifier = Modifier.size(22.dp)
+                                    dataViewModel.updateParticipantState(user, suggestionDateId, ParticipantState.HasVoted)
+                                }
+                            }, modifier = Modifier.size(22.dp)
+                        )
+                    }, trailingContent = {
+                        Text(
+                            text = entry.counter.toString(), style = TextStyle(
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Normal,
+                                color = colorResource(R.color.ic_launcher_background),
+                                fontFamily = RobotoFontFamily
                             )
-                        },
-                        trailingContent = {
-                            Text(
-                                text = entry.counter.toString(),
-                                style = TextStyle(
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.Normal,
-                                    color = colorResource(R.color.ic_launcher_background),
-                                    fontFamily = RobotoFontFamily
-                                )
-                            )
-                        }
-                    )
+                        )
+                    })
                 }
             }
         }

@@ -2,7 +2,11 @@ package de.eduardschunk.boardplay.pages.suggestions
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,6 +23,7 @@ import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.HowToReg
 import androidx.compose.material.icons.filled.HowToVote
+import androidx.compose.material.icons.filled.Today
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -48,6 +53,7 @@ import de.eduardschunk.boardplay.AuthViewModel
 import de.eduardschunk.boardplay.DataViewModel
 import de.eduardschunk.boardplay.R
 import de.eduardschunk.boardplay.components.AppTopBar
+import de.eduardschunk.boardplay.components.CustomListItem
 import de.eduardschunk.boardplay.data.SuggestionDate
 import de.eduardschunk.boardplay.data.User
 import de.eduardschunk.boardplay.ui.theme.RobotoFontFamily
@@ -75,14 +81,7 @@ fun ParticipantListPage(
 
     LaunchedEffect(suggestionDateId) {
         userList = suggestionDateId?.let { dataViewModel.fetchUserListBySuggestionDateId(it) } ?: emptyList()
-
-        suggestionDateId?.let {
-            dataViewModel.fetchSuggestionDateById(it) { loadedSuggestionDate ->
-                if (loadedSuggestionDate != null) {
-                    suggestionDate = loadedSuggestionDate
-                }
-            }
-        }
+        suggestionDate = suggestionDateId?.let {dataViewModel.fetchSuggestionDateById(suggestionDateId)} ?: SuggestionDate()
     }
 
     LaunchedEffect(suggestionDate) {
@@ -171,7 +170,7 @@ fun ParticipantListPage(
             ) {
                 items(userList) { user ->
                     var userState by remember { mutableStateOf(ParticipantState.NotVoted) }
-
+                    var expanded by remember { mutableStateOf(false) }
                     val userDisplayName = user.firstName + " " + user.lastName
 
                     LaunchedEffect(user, suggestionDate) {
@@ -202,7 +201,39 @@ fun ParticipantListPage(
                                 contentDescription = "state",
                                 Modifier.size(22.dp)
                             )
+                        },
+                        modifier = Modifier.clickable {
+                            expanded = !expanded
                         }
+
+                    )
+                    // List of dates
+                    var dateList by remember { mutableStateOf<List<String>>(emptyList()) }
+
+                    LaunchedEffect(user, suggestionDate) {
+                        dateList = dataViewModel.fetchDateListForUserBySuggestionDateId(suggestionDate.id, user.id)
+                    }
+
+                    AnimatedVisibility(
+                        visible = expanded,
+                        enter = expandVertically(),
+                        exit = shrinkVertically()
+                    ) {
+                        Column {
+                            dateList.forEach { dateItem ->
+                                CustomListItem(
+                                    text = dateItem,
+                                    backgroundColor = colorResource(R.color.bg_yellow),
+                                    icon = Icons.Filled.Today
+                                )
+                            }
+                        }
+                    }
+
+                    HorizontalDivider(
+                        color = colorResource(R.color.yellow),
+                        thickness = 0.5.dp,
+                        modifier = Modifier
                     )
                 }
             }

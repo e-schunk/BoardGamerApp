@@ -63,10 +63,10 @@ fun SuggestionDateDetailPage(
             is AuthState.Unauthenticated -> navController.navigate("home")
             else -> Unit
         }
+    }
 
-        dataViewModel.fetchSuggestionDateById(suggestionDateId) { loadedSuggestionDate ->
-            suggestionDate = loadedSuggestionDate
-        }
+    LaunchedEffect(suggestionDateId) {
+        suggestionDate = suggestionDateId.let { dataViewModel.fetchSuggestionDateById(suggestionDateId) } ?: SuggestionDate()
     }
 
     Scaffold(

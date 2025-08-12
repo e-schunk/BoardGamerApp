@@ -466,16 +466,9 @@ open class DataViewModel : ViewModel() {
             }
     }
 
-    fun fetchSuggestionDateById(suggestionDateId: String, callback: (SuggestionDate?) -> Unit) {
-        val myRef = db.getReference("suggestions")
-        myRef.get().addOnSuccessListener { snapshot ->
-            val suggestionDate =
-                snapshot.children.mapNotNull { it.getValue(SuggestionDate::class.java) }
-                    .find { it.id == suggestionDateId }
-            callback(suggestionDate)
-        }.addOnFailureListener {
-            callback(null)
-        }
+    suspend fun fetchSuggestionDateById(suggestionDateId: String): SuggestionDate? {
+        val snapshot = db.getReference("suggestions").child(suggestionDateId).get().await()
+        return snapshot.getValue(SuggestionDate::class.java)
     }
 
     suspend fun fetchUserListBySuggestionDateId(suggestionDateId: String): List<User> =
@@ -521,25 +514,22 @@ open class DataViewModel : ViewModel() {
             .setValue(dateEntry)
     }
 
-    val dateListLiveData = MutableLiveData<List<DateEntry>>()
+    suspend fun fetchDateList(suggestionDateId: String): List<DateEntry> {
+        val snapshot = db.getReference("suggestions")
+            .child(suggestionDateId)
+            .child("date_list")
+            .get()
+            .await()
 
-    fun observeDateList(suggestionDateId: String) {
-        val myRef = db.getReference("suggestions")
-        myRef.child(suggestionDateId).child("date_list")
-            .addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    val list = mutableListOf<DateEntry>()
-                    for (item in snapshot.children) {
-                        val key = item.key ?: continue
-                        val date = item.child("date").getValue(String::class.java) ?: continue
-                        val counter = item.child("counter").getValue(Int::class.java) ?: 0
-                        list.add(DateEntry(key, date, counter))
-                    }
-                    dateListLiveData.value = list
-                }
+        return snapshot.children.mapNotNull { item ->
+            val key = item.key ?: return@mapNotNull null
+            val date = item.child("date").getValue(String::class.java) ?: return@mapNotNull null
+            val counter = item.child("counter").getValue(Int::class.java) ?: 0
+            val participants = item.child("participants")
+                .children.mapNotNull { it.key }
 
-                override fun onCancelled(error: DatabaseError) {}
-            })
+            DateEntry(key, date, counter, participants)
+        }
     }
 
     fun deleteDateEntry(suggestionDateId: String, entryKey: String) {
@@ -547,27 +537,32 @@ open class DataViewModel : ViewModel() {
         myRef.child(suggestionDateId).child("date_list").child(entryKey).removeValue()
     }
 
-    fun addDateAndUserToDatesOnSuggestionDate(
+    fun addUserToDateListBySuggestionDate(
         suggestionDateId: String,
         dateEntry: DateEntry,
         userId: String
     ) {
         val myRef = db.getReference("suggestions")
-        myRef.child(suggestionDateId).child("dates")
+            .child(suggestionDateId)
+            .child("date_list")
             .child(dateEntry.key)
-            .setValue(
-                mapOf(
-                    "userId" to userId,
-                    "date" to dateEntry.date
-                )
-            )
+
+        myRef.child("participants").child(userId).setValue(true)
     }
 
-    fun removeDateAndUserFromDatesOnSuggestionDate(suggestionDateId: String, datesId: String) {
+    fun removeUserFromDateListBySuggestionDate(
+        suggestionDateId: String,
+        dateEntryKey: String,
+        userId: String
+    ) {
         val myRef = db.getReference("suggestions")
-        myRef.child(suggestionDateId).child("dates")
-            .child(datesId)
-            .removeValue()
+            .child(suggestionDateId)
+            .child("date_list")
+            .child(dateEntryKey)
+            .child("participants")
+            .child(userId)
+
+        myRef.removeValue()
     }
 
     fun updateParticipantState(userId: String, suggestionDateId: String, state: ParticipantState) {
@@ -602,5 +597,43 @@ open class DataViewModel : ViewModel() {
                 }
             }
         })
+    }
+
+    suspend fun fetchDateListForUserBySuggestionDateId(suggestionDateId: String, userId: String): List<String> {
+        val result = mutableListOf<String>()
+        val dateListSnapshot = db.getReference("suggestions")
+            .child(suggestionDateId)
+            .child("date_list").get().await()
+
+        for (dateSnapshot in dateListSnapshot.children) {
+            val participantSnapshot = dateSnapshot.child("participants")
+            val hasVoted = participantSnapshot.child(userId).getValue(Boolean::class.java) ?: false
+
+            val entryDate = dateSnapshot.child("date").getValue(String::class.java)
+
+            if (hasVoted && entryDate != null) {
+                result.add(entryDate)
+            }
+        }
+        return result
+    }
+
+    suspend fun fetchUserListBySuggestionDateAndKey(suggestionDateId: String, key: String): List<String> {
+        val result = mutableListOf<String>()
+        val participantsSnapshot = db.getReference("suggestions")
+            .child(suggestionDateId)
+            .child("date_list")
+            .child(key)
+            .child("participants").get().await()
+
+        for (participantSnapshot in participantsSnapshot.children) {
+            participantSnapshot.key?.let {
+                val user = fetchUserById(it)
+                if (user != null) {
+                    result.add(user.firstName + " " + user.lastName)
+                }
+            }
+        }
+        return result
     }
 }

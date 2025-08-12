@@ -56,11 +56,7 @@ import de.eduardschunk.boardplay.ui.theme.RobotoFontFamily
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GameSuggestPage(
-    modifier: Modifier = Modifier,
-    navController: NavController,
-    authViewModel: AuthViewModel,
-    dataViewModel: DataViewModel,
-    eventId: String?
+    modifier: Modifier = Modifier, navController: NavController, authViewModel: AuthViewModel, dataViewModel: DataViewModel, eventId: String?
 ) {
 
     val authState = authViewModel.authState.observeAsState()
@@ -75,34 +71,29 @@ fun GameSuggestPage(
             is AuthState.Unauthenticated -> navController.navigate("home")
             else -> Unit
         }
+    }
 
+    LaunchedEffect(eventId) {
         dataViewModel.fetchEventById(eventId) { loadedEvent ->
             event = loadedEvent
         }
     }
 
-    Scaffold(
-        topBar = {
-            AppTopBar(
-                titel = "Spiel vorschlagen",
-                onMenuClick = { navController.navigate("home") },
-                dataViewModel = dataViewModel
-            )
-        },
-        bottomBar = {
-            TextButton(
-                onClick = { authViewModel.singout() }
-            ) {
-                Text(text = "Ausloggen")
-            }
+    Scaffold(topBar = {
+        AppTopBar(
+            titel = "Spiel vorschlagen", onMenuClick = { navController.navigate("home") }, dataViewModel = dataViewModel
+        )
+    }, bottomBar = {
+        TextButton(
+            onClick = { authViewModel.singout() }) {
+            Text(text = "Ausloggen")
         }
-    ) { innerPadding ->
+    }) { innerPadding ->
         Column(
             modifier = modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .background(colorResource(R.color.white)),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .background(colorResource(R.color.white)), horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Row(
                 modifier = Modifier
@@ -114,12 +105,8 @@ fun GameSuggestPage(
             ) {
                 Text(
                     "Spiel vorschlagen", style = TextStyle(
-                        fontSize = 28.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = colorResource(R.color.black),
-                        fontFamily = RobotoFontFamily
-                    ),
-                    modifier = Modifier.height(39.dp)
+                        fontSize = 28.sp, fontWeight = FontWeight.Bold, color = colorResource(R.color.black), fontFamily = RobotoFontFamily
+                    ), modifier = Modifier.height(39.dp)
                 )
                 IconButton(onClick = {
                     navController.navigate("newGame/$eventId")
@@ -155,8 +142,7 @@ fun GameSuggestPage(
                     }) { Icon(Icons.Default.Close, "Löschen") }
                 },
                 colors = SearchBarDefaults.colors(
-                    containerColor = colorResource(R.color.bg_appbar_blue),
-                    dividerColor = colorResource(R.color.dark_blue)
+                    containerColor = colorResource(R.color.bg_appbar_blue), dividerColor = colorResource(R.color.dark_blue)
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -171,23 +157,17 @@ fun GameSuggestPage(
                                 .fillMaxWidth()
                                 .clickable {
                                     val eventGame = EventGame(
-                                        eventId = event?.id ?: "",
-                                        gameId = gameItem.id
+                                        eventId = event?.id ?: "", gameId = gameItem.id
                                     )
-                                    dataViewModel.saveEventGame(eventGame,
-                                        onSuccess = {
-                                            navController.navigate("gameList/${event?.id}")
-                                        },
-                                        onFailure = { e ->
-                                            Toast.makeText(context, e.message, Toast.LENGTH_SHORT).show()
-                                        })
+                                    dataViewModel.saveEventGame(eventGame, onSuccess = {
+                                        navController.navigate("gameList/${event?.id}")
+                                    }, onFailure = { e ->
+                                        Toast.makeText(context, e.message, Toast.LENGTH_SHORT).show()
+                                    })
                                     isActive = false
-                                }
-                        )
+                                })
                         HorizontalDivider(
-                            color = colorResource(R.color.green),
-                            thickness = 1.dp,
-                            modifier = Modifier
+                            color = colorResource(R.color.green), thickness = 1.dp, modifier = Modifier
                         )
                     }
                 }

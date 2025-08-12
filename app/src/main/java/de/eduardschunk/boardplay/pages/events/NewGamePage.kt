@@ -55,11 +55,7 @@ import de.eduardschunk.boardplay.uriToBitmap
 
 @Composable
 fun NewGamePage(
-    modifier: Modifier = Modifier,
-    navController: NavController,
-    authViewModel: AuthViewModel,
-    dataViewModel: DataViewModel,
-    eventId: String?
+    modifier: Modifier = Modifier, navController: NavController, authViewModel: AuthViewModel, dataViewModel: DataViewModel, eventId: String?
 ) {
 
     val authState = authViewModel.authState.observeAsState()
@@ -70,57 +66,47 @@ fun NewGamePage(
     var image by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
 
-    val imagePickerLauncher =
-        rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-            imageUri = uri
-            uri?.let {
-                val bitmap = uriToBitmap(context, it)
-                image = encodeBitmapToBase64(bitmap)
-            }
+    val imagePickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        imageUri = uri
+        uri?.let {
+            val bitmap = uriToBitmap(context, it)
+            image = encodeBitmapToBase64(bitmap)
         }
+    }
 
     LaunchedEffect(authState.value) {
         when (authState.value) {
             is AuthState.Unauthenticated -> navController.navigate("home")
             else -> Unit
         }
+    }
 
+    LaunchedEffect(eventId) {
         dataViewModel.fetchEventById(eventId) { loadedEvent ->
             event = loadedEvent
         }
     }
 
-    Scaffold(
-        topBar = {
-            AppTopBar(
-                titel = "Neues Spiel",
-                onMenuClick = { navController.navigate("home") },
-                dataViewModel = dataViewModel
-            )
-        },
-        bottomBar = {
-            TextButton(
-                onClick = { authViewModel.singout() }
-            ) {
-                Text(text = "Ausloggen")
-            }
+    Scaffold(topBar = {
+        AppTopBar(
+            titel = "Neues Spiel", onMenuClick = { navController.navigate("home") }, dataViewModel = dataViewModel
+        )
+    }, bottomBar = {
+        TextButton(
+            onClick = { authViewModel.singout() }) {
+            Text(text = "Ausloggen")
         }
-    ) { innerPadding ->
+    }) { innerPadding ->
         Column(
             modifier = modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .background(colorResource(R.color.white)),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .background(colorResource(R.color.white)), horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
                 "Neues Spiel anlegen", style = TextStyle(
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = colorResource(R.color.black),
-                    fontFamily = RobotoFontFamily
-                ),
-                modifier = Modifier
+                    fontSize = 28.sp, fontWeight = FontWeight.Bold, color = colorResource(R.color.black), fontFamily = RobotoFontFamily
+                ), modifier = Modifier
                     .height(39.dp)
                     .fillMaxWidth()
                     .align(Alignment.Start)
@@ -161,27 +147,18 @@ fun NewGamePage(
             FilledIconButton(
                 onClick = {
                     val game = Game(
-                        title = title,
-                        description = desc,
-                        image = image ?: ""
+                        title = title, description = desc, image = image ?: ""
                     )
-                    dataViewModel.saveGame(
-                        game,
-                        onSuccess = {
-                            navController.navigate("gameList/${event?.id}")
-                        },
-                        onFailure = { e ->
-                            Toast.makeText(context, e.message, Toast.LENGTH_SHORT).show()
-                        }
-                    )
-                },
-                modifier = Modifier
+                    dataViewModel.saveGame(game, onSuccess = {
+                        navController.navigate("gameList/${event?.id}")
+                    }, onFailure = { e ->
+                        Toast.makeText(context, e.message, Toast.LENGTH_SHORT).show()
+                    })
+                }, modifier = Modifier
                     .align(Alignment.CenterHorizontally)
                     .width(275.dp)
-                    .height(60.dp),
-                colors = IconButtonDefaults.filledIconButtonColors(
-                    containerColor = colorResource(R.color.dark_blue),
-                    contentColor = colorResource(R.color.white)
+                    .height(60.dp), colors = IconButtonDefaults.filledIconButtonColors(
+                    containerColor = colorResource(R.color.dark_blue), contentColor = colorResource(R.color.white)
                 )
             ) {
                 Row(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
@@ -192,8 +169,7 @@ fun NewGamePage(
                         tint = colorResource(R.color.white)
                     )
                     Text(
-                        text = "Speichern",
-                        style = MaterialTheme.typography.titleMedium
+                        text = "Speichern", style = MaterialTheme.typography.titleMedium
                     )
                 }
             }

@@ -4,7 +4,11 @@ import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,6 +23,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Today
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
@@ -47,6 +52,8 @@ import de.eduardschunk.boardplay.AuthViewModel
 import de.eduardschunk.boardplay.DataViewModel
 import de.eduardschunk.boardplay.R
 import de.eduardschunk.boardplay.components.AppTopBar
+import de.eduardschunk.boardplay.components.CustomListItem
+import de.eduardschunk.boardplay.data.DateEntry
 import de.eduardschunk.boardplay.data.SuggestionDate
 import de.eduardschunk.boardplay.ui.theme.RobotoFontFamily
 import java.util.Calendar
@@ -65,7 +72,7 @@ fun SuggestionDatesEditPage(
     var suggestionDate by remember { mutableStateOf(SuggestionDate()) }
     val context = LocalContext.current
     val calendar = Calendar.getInstance()
-    val dateList by dataViewModel.dateListLiveData.observeAsState(emptyList())
+    var dateList by remember { mutableStateOf<List<DateEntry>>(emptyList()) }
 
     LaunchedEffect(authState.value) {
         when (authState.value) {
@@ -76,12 +83,8 @@ fun SuggestionDatesEditPage(
 
     LaunchedEffect(suggestionDateId) {
         suggestionDateId?.let {
-            dataViewModel.fetchSuggestionDateById(it) { loadedSuggestionDate ->
-                if (loadedSuggestionDate != null) {
-                    suggestionDate = loadedSuggestionDate
-                }
-            }
-            dataViewModel.observeDateList(it)
+            suggestionDate = dataViewModel.fetchSuggestionDateById(suggestionDateId) ?: SuggestionDate()
+            dateList = dataViewModel.fetchDateList(suggestionDateId)
         }
     }
 
@@ -181,6 +184,7 @@ fun SuggestionDatesEditPage(
                 modifier = Modifier.weight(1f)
             ) {
                 items(dateList) { entry ->
+                    var expanded by remember { mutableStateOf(false) }
                     ListItem(
                         headlineContent = { Text(entry.date) },
                         leadingContent = {
@@ -215,7 +219,40 @@ fun SuggestionDatesEditPage(
                                     )
                                 }
                             }
+                        },
+                        modifier = Modifier.clickable {
+                            expanded = !expanded
                         }
+                    )
+
+                    // List of users
+                    var userList by remember { mutableStateOf<List<String>>(emptyList()) }
+
+                    LaunchedEffect(suggestionDate) {
+                        userList = dataViewModel.fetchUserListBySuggestionDateAndKey(suggestionDate.id, entry.key)
+                    }
+
+                    AnimatedVisibility(
+                        visible = expanded,
+                        enter = expandVertically(),
+                        exit = shrinkVertically()
+                    ) {
+                        Column {
+                            userList.forEach { userItem ->
+                                CustomListItem(
+                                    text = userItem,
+                                    textColor = colorResource(R.color.white),
+                                    backgroundColor = colorResource(R.color.bg_green),
+                                    icon = Icons.Filled.Today
+                                )
+                            }
+                        }
+                    }
+
+                    HorizontalDivider(
+                        color = colorResource(R.color.green),
+                        thickness = 0.5.dp,
+                        modifier = Modifier
                     )
                 }
             }

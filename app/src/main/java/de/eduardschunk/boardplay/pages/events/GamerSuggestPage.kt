@@ -55,11 +55,7 @@ import de.eduardschunk.boardplay.ui.theme.RobotoFontFamily
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GamerSuggestPage(
-    modifier: Modifier = Modifier,
-    navController: NavController,
-    authViewModel: AuthViewModel,
-    dataViewModel: DataViewModel,
-    eventId: String?
+    modifier: Modifier = Modifier, navController: NavController, authViewModel: AuthViewModel, dataViewModel: DataViewModel, eventId: String?
 ) {
 
     val authState = authViewModel.authState.observeAsState()
@@ -75,34 +71,29 @@ fun GamerSuggestPage(
             is AuthState.Unauthenticated -> navController.navigate("home")
             else -> Unit
         }
+    }
 
+    LaunchedEffect(eventId) {
         dataViewModel.fetchEventById(eventId) { loadedEvent ->
             event = loadedEvent
         }
     }
 
-    Scaffold(
-        topBar = {
-            AppTopBar(
-                titel = "Spieler einladen",
-                onMenuClick = { navController.navigate("home") },
-                dataViewModel = dataViewModel
-            )
-        },
-        bottomBar = {
-            TextButton(
-                onClick = { authViewModel.singout() }
-            ) {
-                Text(text = "Ausloggen")
-            }
+    Scaffold(topBar = {
+        AppTopBar(
+            titel = "Spieler einladen", onMenuClick = { navController.navigate("home") }, dataViewModel = dataViewModel
+        )
+    }, bottomBar = {
+        TextButton(
+            onClick = { authViewModel.singout() }) {
+            Text(text = "Ausloggen")
         }
-    ) { innerPadding ->
+    }) { innerPadding ->
         Column(
             modifier = modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .background(colorResource(R.color.white)),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .background(colorResource(R.color.white)), horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Row(
                 modifier = Modifier
@@ -114,12 +105,8 @@ fun GamerSuggestPage(
             ) {
                 Text(
                     "Einladung", style = TextStyle(
-                        fontSize = 28.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = colorResource(R.color.black),
-                        fontFamily = RobotoFontFamily
-                    ),
-                    modifier = Modifier.height(39.dp)
+                        fontSize = 28.sp, fontWeight = FontWeight.Bold, color = colorResource(R.color.black), fontFamily = RobotoFontFamily
+                    ), modifier = Modifier.height(39.dp)
                 )
             }
             SearchBar(
@@ -145,8 +132,7 @@ fun GamerSuggestPage(
                     }) { Icon(Icons.Default.Close, "Löschen") }
                 },
                 colors = SearchBarDefaults.colors(
-                    containerColor = colorResource(R.color.bg_appbar_blue),
-                    dividerColor = colorResource(R.color.dark_blue)
+                    containerColor = colorResource(R.color.bg_appbar_blue), dividerColor = colorResource(R.color.dark_blue)
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -154,67 +140,47 @@ fun GamerSuggestPage(
             ) {
                 LazyColumn {
                     items(searchResult) { gamerItem ->
-                        ListItem(
-                            headlineContent = { Text(gamerItem.firstName + " " + gamerItem.lastName) },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    if (eventId != null) {
-                                        showDialog = true
-                                        selectedUser = gamerItem
-                                    }
+                        ListItem(headlineContent = { Text(gamerItem.firstName + " " + gamerItem.lastName) }, modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                if (eventId != null) {
+                                    showDialog = true
+                                    selectedUser = gamerItem
                                 }
-                        )
+                            })
                         HorizontalDivider(
-                            color = colorResource(R.color.green),
-                            thickness = 1.dp,
-                            modifier = Modifier
+                            color = colorResource(R.color.green), thickness = 1.dp, modifier = Modifier
                         )
                     }
                 }
             }
             if (showDialog && selectedUser != null && eventId != null) {
                 AlertDialog(
-                    onDismissRequest = { showDialog = false },
-                    title = { Text(text = "Teilnehmer hinzufügen") },
-                    text = {
-                        Text(text = "Willst du den Teilnehmer ${selectedUser!!.firstName} ${selectedUser!!.lastName} wirklich einladen?")
-                    },
-                    confirmButton = {
-                        TextButton(
-                            onClick = {
-                                dataViewModel.addGamerToEvent(
-                                    eventId = eventId,
-                                    userId = selectedUser!!.id,
-                                    onSuccess = {
-                                        Toast.makeText(
-                                            navController.context,
-                                            "Einladung gesendet",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                        isActive = false
-                                        navController.navigate("eventDetail/$eventId")
-                                    },
-                                    onFailure = {
-                                        Toast.makeText(
-                                            navController.context,
-                                            "Einladung konnte nicht gesendet werden",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                    }
-                                )
-                                showDialog = false
-                            }
-                        ) {
-                            Text("Einladen")
-                        }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = { showDialog = false }) {
-                            Text("Abbrechen")
-                        }
-                    },
-                    containerColor = colorResource(R.color.light_grey)
+                    onDismissRequest = { showDialog = false }, title = { Text(text = "Teilnehmer hinzufügen") }, text = {
+                    Text(text = "Willst du den Teilnehmer ${selectedUser!!.firstName} ${selectedUser!!.lastName} wirklich einladen?")
+                }, confirmButton = {
+                    TextButton(
+                        onClick = {
+                            dataViewModel.addGamerToEvent(eventId = eventId, userId = selectedUser!!.id, onSuccess = {
+                                Toast.makeText(
+                                    navController.context, "Einladung gesendet", Toast.LENGTH_SHORT
+                                ).show()
+                                isActive = false
+                                navController.navigate("eventDetail/$eventId")
+                            }, onFailure = {
+                                Toast.makeText(
+                                    navController.context, "Einladung konnte nicht gesendet werden", Toast.LENGTH_SHORT
+                                ).show()
+                            })
+                            showDialog = false
+                        }) {
+                        Text("Einladen")
+                    }
+                }, dismissButton = {
+                    TextButton(onClick = { showDialog = false }) {
+                        Text("Abbrechen")
+                    }
+                }, containerColor = colorResource(R.color.light_grey)
                 )
             }
         }
