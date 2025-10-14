@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.google.gms.google.services)
     id("com.google.firebase.crashlytics")
+    id("com.github.triplet.play") version "3.12.1"
 }
 
 android {
@@ -19,6 +20,18 @@ android {
         versionName = "1.0.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    signingConfigs {
+        create("release") {
+            val storePath = System.getenv("SIGNING_STORE_FILE")
+            if (!storePath.isNullOrBlank()) {
+                storeFile = file(storePath)
+                storePassword = System.getenv("SIGNING_STORE_PASSWORD")
+                keyAlias = System.getenv("SIGNING_KEY_ALIAS")
+                keyPassword = System.getenv("SIGNING_KEY_PASSWORD")
+            }
+        }
     }
 
     buildTypes {
@@ -41,6 +54,25 @@ android {
     buildFeatures {
         compose = true
     }
+}
+
+play {
+    // In GitHub-Action erzeugte Datei
+    serviceAccountCredentials.set(file("play-service-account.json"))
+
+    // Track = Zielbereich in der Play Console (hier: interner Test)
+    track.set("internal")
+
+    // Immer .aab statt .apk
+    defaultToAppBundles.set(true)
+
+    // Release sofort abschließen
+    releaseStatus.set(com.github.triplet.gradle.androidpublisher.ReleaseStatus.COMPLETED)
+
+    // Vorhandene Drafts automatisch überschreiben
+    resolutionStrategy.set(
+        com.github.triplet.gradle.androidpublisher.ResolutionStrategy.AUTO
+    )
 }
 
 dependencies {
