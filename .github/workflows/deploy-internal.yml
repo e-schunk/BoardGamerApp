@@ -48,6 +48,15 @@ jobs:
         run: |
           echo "$PLAY_SERVICE_ACCOUNT_JSON" > play-service-account.json
 
+      - name: Provide google-services.json (release)
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          mkdir -p app/src/release
+          # an die beiden gängigen Orte schreiben:
+          printf '%s' "$GOOGLE_SERVICES_JSON" > app/src/release/google-services.json
+          printf '%s' "$GOOGLE_SERVICES_JSON" > app/google-services.json
+
       - name: Build AAB
         run: ./gradlew clean bundleRelease --no-daemon
 
