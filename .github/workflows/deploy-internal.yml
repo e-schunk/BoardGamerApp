@@ -95,6 +95,9 @@ jobs:
             -storepass "$SIGNING_STORE_PASSWORD" \
             -keypass "$SIGNING_KEY_PASSWORD" | grep -E "SHA1:|SHA-1:"
 
+      - name: Build and Sign Release AAB
+        run: ./gradlew :app:bundleRelease --no-daemon
+
       - name: Verify AAB signature
         run: jarsigner -verify -verbose -certs app/build/outputs/bundle/release/app-release.aab
 
