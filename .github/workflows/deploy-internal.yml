@@ -80,26 +80,8 @@ jobs:
           printf '%s' "$GOOGLE_SERVICES_JSON" > app/src/release/google-services.json
           printf '%s' "$GOOGLE_SERVICES_JSON" > app/google-services.json
 
-      # Optionaler Check – hilft beim Debuggen der Signierung
-      - name: Show signing report
-        run: ./gradlew :app:signingReport --no-daemon
-
-      - name: Print upload keystore SHA-1
-        env:
-          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
-          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
-          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
-        run: |
-          keytool -list -v -keystore app/upload.keystore \
-            -alias "$SIGNING_KEY_ALIAS" \
-            -storepass "$SIGNING_STORE_PASSWORD" \
-            -keypass "$SIGNING_KEY_PASSWORD" | grep -E "SHA1:|SHA-1:"
-
       - name: Build and Sign Release AAB
         run: ./gradlew :app:bundleRelease --no-daemon
-
-      - name: Verify AAB signature
-        run: jarsigner -verify -verbose -certs app/build/outputs/bundle/release/app-release.aab
 
       - name: Publish to Play (Internal Track)
         env:
