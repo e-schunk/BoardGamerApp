@@ -11,6 +11,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
+    env:
+      SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+      SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+      SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -22,28 +27,10 @@ jobs:
           java-version: "17"
           cache: gradle
 
-      # Versionen ermitteln: bei Tag aus vX.Y.Z, sonst Fallback auf Datum/Zeit
-      - name: Compute versions (from tag or fallback)
-        run: |
-          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
-            VNAME="${GITHUB_REF#refs/tags/v}"
-          else
-            VNAME="$(date +%Y.%m.%d-%H)"
-          fi
-          VCODE="$(date +%Y%m%d%H)"
-          echo "VERSION_NAME=$VNAME" >> $GITHUB_ENV
-          echo "VERSION_CODE=$VCODE" >> $GITHUB_ENV
-          echo "Using VERSION_NAME=$VNAME, VERSION_CODE=$VCODE"
-
-      - name: Bump versionCode / versionName in Gradle
-        run: |
-          sed -i "s/versionName = \".*\"/versionName = \"${VERSION_NAME}\"/" app/build.gradle.kts
-          sed -i "s/versionCode = [0-9]\+/versionCode = ${VERSION_CODE}/" app/build.gradle.kts
-
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
-      # Keystore zwingend vorbereiten (bricht früh ab, wenn Secret fehlt)
+      # Keystore zwingend vorbereiten
       - name: Prepare signing keystore
         env:
           SIGNING_KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
@@ -54,8 +41,7 @@ jobs:
           fi
           mkdir -p app
           echo "$SIGNING_KEYSTORE_BASE64" | base64 -d > app/upload.keystore
-          echo "SIGNING_STORE_FILE=$GITHUB_WORKSPACE/app/upload.keystore" >> $GITHUB_ENV
-          ls -l "$GITHUB_WORKSPACE/app/upload.keystore"
+          echo "SIGNING_STORE_FILE=$GITHUB_WORKSPACE/app/upload.keystore" >> $GITHUB_ENV # WICHTIG: Setzt die Pfad-Variable
 
       - name: Write Play service account (app/)
         env:
@@ -84,9 +70,6 @@ jobs:
         run: ./gradlew :app:bundleRelease --no-daemon
 
       - name: Publish to Play (Internal Track)
-        env:
+        env: # Die Secrets sind schon oben definiert, nur PLAY_PACKAGE_NAME fehlt
           PLAY_PACKAGE_NAME: ${{ secrets.PLAY_PACKAGE_NAME }}
-          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
-          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
-          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
         run: ./gradlew :app:publishReleaseBundle --no-daemon --stacktrace
