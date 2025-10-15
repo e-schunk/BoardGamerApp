@@ -22,8 +22,31 @@ jobs:
           java-version: "17"
           cache: gradle
 
-      - name: Extract version from tag
-        if: startsWith(github.ref, 'refs/tags/')
+      # Versionen ermitteln: bei Tag aus vX.Y.Z, sonst Fallback auf Datum/Zeit
+      - name: Compute versions (from tag or fallback)
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            VNAME="${GITHUB_REF#refs/tags/v}"
+          else
+            VNAME="$(date +%Y.%m.%d-%H)"
+          fi
+          VCODE="$(date +%Y%m%d%H)"
+          echo "VERSION_NAME=$VNAME" >> $GITHUB_ENV
+          echo "VERSION_CODE=$VCODE" >> $GITHUB_ENV
+          echo "Using VERSION_NAME=$VNAME, VERSION_CODE=$VCODE"
+
+      - name: Bump versionCode / versionName in Gradle
+        run: |
+          sed -i "s/versionName = \".*\"/versionName = \"${VERSION_NAME}\"/" app/build.gradle.kts
+          sed -i "s/versionCode = [0-9]\+/versionCode = ${VERSION_CODE}/" app/build.gradle.kts
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      # Keystore zwingend vorbereiten (bricht früh ab, wenn Secret fehlt)
+      - name: Prepare signing keystore
+        env:
+          SIGNING_KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
         run: |
           if [ -z "${SIGNING_KEYSTORE_BASE64}" ]; then
             echo "ERROR: Secret SIGNING_KEYSTORE_BASE64 ist nicht gesetzt." >&2
@@ -34,25 +57,14 @@ jobs:
           echo "SIGNING_STORE_FILE=$GITHUB_WORKSPACE/app/upload.keystore" >> $GITHUB_ENV
           ls -l "$GITHUB_WORKSPACE/app/upload.keystore"
 
-      - name: Bump versionCode / versionName
-        run: |
-          sed -i "s/versionName = \".*\"/versionName = \"$VERSION_NAME\"/" app/build.gradle.kts
-          sed -i "s/versionCode = [0-9]\\+/versionCode = $VERSION_CODE/" app/build.gradle.kts
-
-      - name: Prepare signing keystore
-        if: ${{ secrets.SIGNING_KEYSTORE_BASE64 != '' }}
-        env:
-          SIGNING_KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
-        run: |
-          mkdir -p app
-          echo "$SIGNING_KEYSTORE_BASE64" | base64 -d > app/upload.keystore
-          echo "SIGNING_STORE_FILE=$GITHUB_WORKSPACE/app/upload.keystore" >> $GITHUB_ENV
-          ls -l "$GITHUB_WORKSPACE/app/upload.keystore"
-
-      - name: Write Play service account
+      - name: Write Play service account (app/)
         env:
           PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
         run: |
+          if [ -z "${PLAY_SERVICE_ACCOUNT_JSON}" ]; then
+            echo "ERROR: Secret PLAY_SERVICE_ACCOUNT_JSON ist nicht gesetzt." >&2
+            exit 1
+          fi
           mkdir -p app
           printf '%s' "$PLAY_SERVICE_ACCOUNT_JSON" > app/play-service-account.json
 
@@ -60,10 +72,17 @@ jobs:
         env:
           GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
         run: |
+          if [ -z "${GOOGLE_SERVICES_JSON}" ]; then
+            echo "ERROR: Secret GOOGLE_SERVICES_JSON ist nicht gesetzt." >&2
+            exit 1
+          fi
           mkdir -p app/src/release
-          # an die beiden gängigen Orte schreiben:
           printf '%s' "$GOOGLE_SERVICES_JSON" > app/src/release/google-services.json
           printf '%s' "$GOOGLE_SERVICES_JSON" > app/google-services.json
+
+      # Optionaler Check – hilft beim Debuggen der Signierung
+      - name: Show signing report
+        run: ./gradlew :app:signingReport --no-daemon
 
       - name: Publish to Play (Internal Track)
         env:
