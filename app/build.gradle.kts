@@ -69,7 +69,7 @@ play {
     defaultToAppBundles.set(true)
 
     // Release sofort abschließen
-    releaseStatus.set(com.github.triplet.gradle.androidpublisher.ReleaseStatus.COMPLETED)
+    releaseStatus.set(com.github.triplet.gradle.androidpublisher.ReleaseStatus.DRAFT)
 
     // Vorhandene Drafts automatisch überschreiben
     resolutionStrategy.set(
