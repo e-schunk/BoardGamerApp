@@ -119,31 +119,5 @@ fun MainPage(modifier: Modifier = Modifier, navController: NavController, authVi
                 )
             }
         }
-        FilledIconButton(
-            onClick = {
-                throw RuntimeException("Test Crash") // Force a crash
-            },
-            modifier = Modifier
-                .align(Alignment.CenterHorizontally)
-                .padding(top = 40.dp)
-                .width(275.dp)
-                .height(60.dp),
-            colors = IconButtonDefaults.filledIconButtonColors(
-                containerColor = colorResource(R.color.light_blue),
-                contentColor = colorResource(R.color.white)
-            )
-        ){
-            Row(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-                Icon(
-                    painter = painterResource(id = R.drawable.baseline_arrow_upward_24),
-                    contentDescription = "Login",
-                    modifier = Modifier.padding(end = 8.dp)
-                )
-                Text(
-                    text = "Test Crash",
-                    style = MaterialTheme.typography.titleMedium
-                )
-            }
-        }
     }
 }
