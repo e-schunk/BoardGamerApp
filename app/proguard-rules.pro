@@ -20,4 +20,7 @@
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
 
--keepclassmembers class ** { public <init>(); }
+-keepclassmembers class ** {
+    public <init>();
+    !static *;
+}
