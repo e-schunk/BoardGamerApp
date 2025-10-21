@@ -1,10 +1,12 @@
 package de.eduardschunk.boardplay.data
 
 import android.os.Build
+import androidx.annotation.Keep
 import androidx.annotation.RequiresApi
 import de.eduardschunk.boardplay.pages.suggestions.ParticipantState
 import java.util.UUID
 
+@Keep
 data class SuggestionDate @RequiresApi(Build.VERSION_CODES.O) constructor(
     override val id: String = UUID.randomUUID().toString(),
     override val title: String = "",

@@ -1,7 +1,9 @@
 package de.eduardschunk.boardplay.data
 
+import androidx.annotation.Keep
 import java.util.UUID
 
+@Keep
 data class EventGame(
     val id: String = UUID.randomUUID().toString(),
     val eventId: String = "",

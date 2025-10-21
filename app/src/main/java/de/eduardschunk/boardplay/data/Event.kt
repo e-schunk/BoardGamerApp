@@ -1,8 +1,11 @@
 package de.eduardschunk.boardplay.data
 
+import androidx.annotation.Keep
 import de.eduardschunk.boardplay.pages.events.UserState
 import java.util.UUID
 
+
+@Keep
 data class Event(
     override val id: String = UUID.randomUUID().toString(),
     override val title: String = "",
