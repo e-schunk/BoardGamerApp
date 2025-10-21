@@ -1,30 +1,63 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+###############################################################
+## 1. WICHTIGE EIGENE REGELN (Behebt Ihre Fehler)
+###############################################################
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
-
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
-
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
-
--keep class com.google.firebase.** { *; }
--dontwarn com.google.firebase.**
--keepclassmembers class * { @com.google.firebase.database.PropertyName <fields>; }
-
+# Schützt den öffentlichen, leeren Konstruktor in ALLEN Ihrer Data Classes.
+# Dies behebt die "DatabaseException: Class g7.i does not define a no-argument constructor".
 -keepclassmembers class ** {
     public <init>();
+}
+
+# Schützt die Felder in ALLEN Ihrer Data Classes vor dem Entfernen (Stripping).
+# Dies behebt das Problem, dass Firebase-Daten zwar geladen, aber nicht angezeigt werden (fehlende Felder).
+-keepclassmembers class ** {
     !static *;
+}
+
+###############################################################
+## 2. ANDROID/COMPOSE-STABILITÄT (Behebt die NullPointerException)
+###############################################################
+
+# Behält alle notwendigen Konstruktoren von Android View-Klassen bei,
+# um Reflection-Fehler zu vermeiden (wichtig für AndroidComposeView).
+-keep public class * extends android.view.View {
+    public <init>(android.content.Context);
+    public <init>(android.content.Context, android.util.AttributeSet);
+    public <init>(android.content.Context, android.util.AttributeSet, int);
+}
+
+# Behält notwendige Ressourcen-Felder in den generierten R-Klassen bei.
+# Dies behebt oft NullPointerException-Fehler bei der Initialisierung von Views/Compose.
+-keepclassmembers class **.R$* {
+    public static final int *;
+}
+
+# Behält kritische Signaturen und Annotationen bei, die von Kotlin/Compose benötigt werden.
+-keepattributes Signature
+-keepattributes *Annotation*
+
+###############################################################
+## 3. ALLGEMEINE SICHERHEIT (Falls nicht automatisch geladen)
+###############################################################
+
+# Unterdrückt Warnungen für häufige Abhängigkeiten wie OkHttp und Firebase,
+# deren innere Klassen R8 nicht vollständig analysieren kann.
+-dontwarn okio.**
+-dontwarn com.google.firebase.**
+-dontwarn com.google.android.gms.**
+-dontwarn org.apache.http.conn.scheme.**
+-dontwarn java.nio.file.**
+
+# Behält Methoden bei, die in nativem Code aufgerufen werden (z.B. NDK-Funktionen)
+-keepclasseswithmembers class * {
+    native <methods>;
+}
+
+# Behält Java Serialization bei, falls benötigt (häufig bei älteren Apps/Libs)
+-keep class * implements java.io.Serializable {
+    static final long serialVersionUID;
+    private static final java.io.ObjectStreamField[] serialPersistentFields;
+    private void writeObject(java.io.ObjectOutputStream);
+    private void readObject(java.io.ObjectInputStream);
+    private void readObjectNoData();
 }
