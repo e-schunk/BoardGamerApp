@@ -20,6 +20,10 @@
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
 
+-keep class com.google.firebase.** { *; }
+-dontwarn com.google.firebase.**
+-keepclassmembers class * { @com.google.firebase.database.PropertyName <fields>; }
+
 -keepclassmembers class ** {
     public <init>();
     !static *;
